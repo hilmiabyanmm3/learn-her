@@ -10,7 +10,7 @@ from components.ui_components import (
 )
 from utils.module_5_utils import generate_multi_surface_comparison
 
-st.set_page_config(page_title="Module 5: Comparation | HER", layout="wide")
+st.set_page_config(page_title="Module 5: Comparation | HER", page_icon="https://img.icons8.com/?size=100&id=vtLGHdmfoSt8&format=png&color=000000", layout="wide")
 inject_global_css()
 style_sidebar()
 render_sidebar_progress(100)

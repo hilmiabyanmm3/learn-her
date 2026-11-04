@@ -10,7 +10,7 @@ from components.ui_components import (
 )
 from utils.module_2_utils import inspect_surface_zip, build_adsorbate_system
 
-st.set_page_config(page_title="Module 2: Adsorbate Creation | HER", layout="wide")
+st.set_page_config(page_title="Module 2: Adsorbate Creation | HER", page_icon="https://img.icons8.com/?size=100&id=vtLGHdmfoSt8&format=png&color=000000", layout="wide")
 inject_global_css()
 style_sidebar()
 render_sidebar_progress(40)

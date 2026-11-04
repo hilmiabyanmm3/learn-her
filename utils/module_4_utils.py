@@ -29,7 +29,7 @@ def render_gibbs_reaction_profile(
     h_x_start = x_mid[1] - width/2
     h_x_end = x_mid[1] + width/2
 
-    color = "#1e3a8a" if abs(delta_g_shifted) <= 0.1 else ("#ef4444" if delta_g_shifted > 0 else "#2563eb")
+    color = "#007BFF" if abs(delta_g_shifted) <= 0.1 else ("#ef4444" if delta_g_shifted > 0 else "#2563eb")
     ax.hlines(delta_g_shifted, h_x_start, h_x_end, colors=color, linewidth=bar_thickness)
     ax.text(x_mid[1], delta_g_shifted + 0.025, f"{delta_g_shifted:+.2f} eV", ha='center', va='bottom', fontsize=10, fontweight='bold', color=color)
 
@@ -58,20 +58,16 @@ def render_ul_graph(surface_name: str, delta_e: float, delta_g: float) -> bytes:
     """
     fig, ax = plt.subplots(figsize=(7.2, 4.8), dpi=300)
 
-    # Thermochemical correction Delta ZPE - T Delta S
     corr = delta_g - delta_e if (delta_g is not None and delta_e is not None) else 0.24
     de_peak = -corr
 
-    # Theoretical Sabatier Volcano lines vs. *H adsorption energy:
     de_neg = np.linspace(-1.0, de_peak, 100)
     de_pos = np.linspace(de_peak, 0.6, 100)
 
-    ul_neg = de_neg + corr      # Heyrovsky branch: slope = +1
-    ul_pos = -(de_pos + corr)   # Volmer branch: slope = -1
-
-    ax.plot(de_neg, ul_neg, color="#dc2626", linewidth=2.5,
+    # Cohesive theme: Slate-Gray for Heyrovsky branch, Electric Blue for Volmer branch
+    ax.plot(de_neg, de_neg + corr, color="#475569", linewidth=2.5,
             label=rf"Heyrovsky / Tafel Limiting ($\Delta E_{{\mathrm{{H}}^*}} < {de_peak:.2f}$ eV)")
-    ax.plot(de_pos, ul_pos, color="#2563eb", linewidth=2.5,
+    ax.plot(de_pos, -(de_pos + corr), color="#007BFF", linewidth=2.5,
             label=rf"Volmer Limiting ($\Delta E_{{\mathrm{{H}}^*}} > {de_peak:.2f}$ eV)")
 
     # Volcano Peak (Ideal catalyst at U_L = 0 V)
@@ -80,7 +76,7 @@ def render_ul_graph(surface_name: str, delta_e: float, delta_g: float) -> bytes:
 
     # Current catalyst point (x = Delta E_H*, y = U_L)
     ul_val = -abs(delta_g)
-    ax.scatter([delta_e], [ul_val], color="#7c3aed", s=140, zorder=6, edgecolors="black", linewidths=1.5,
+    ax.scatter([delta_e], [ul_val], color="#0056b3", s=140, zorder=6, edgecolors="#0f172a", linewidths=1.5,
                label=f"{surface_name} ($\Delta E = {delta_e:+.2f}$ eV, $U_L = {ul_val:+.2f}$ V)")
 
     # Dashed drop lines to axes
@@ -106,15 +102,6 @@ def render_ul_graph(surface_name: str, delta_e: float, delta_g: float) -> bytes:
 def calculate_gibbs_and_visualize(
     zip_bytes: bytes, u_pot: float = 0.0, ph: float = 0.0
 ) -> tuple[bytes | None, dict | None, bytes | None, bytes | None, str | None]:
-    """
-    Computes Delta G_H* and Limiting Potential U_L, updates sheet 5-gibbs,
-    and produces two SEPARATE graphs:
-      1. gibbs_img_bytes: Gibbs Free Energy Profile (Reaction Coordinate).
-      2. ul_img_bytes: Limiting Potential (U_L) Graph (y: U_L, x: *H Adsorption Energy Delta E_H*).
-    Saves both as separate PNG files in `5-data-visual/`:
-      - `5-data-visual/her_free_energy_diagram.png`
-      - `5-data-visual/her_limiting_potential_diagram.png`
-    """
     files = extract_zip_to_dict(zip_bytes)
     excel_info = find_excel_file(files)
     if not excel_info:
@@ -134,7 +121,6 @@ def calculate_gibbs_and_visualize(
 
     surface_name = ws1.cell(row=2, column=1).value or "Surface"
 
-    # Ground state electronic energies
     e_surf_ry = ws1.cell(row=2, column=2).value
     e_surf_ev = float(e_surf_ry) * RY_TO_EV if isinstance(e_surf_ry, (int, float)) else None
 
@@ -161,11 +147,9 @@ def calculate_gibbs_and_visualize(
     t_delta_s = -0.5 * ts_h2
     delta_g_base = delta_e + delta_zpe + 0.5 * ts_h2
 
-    # Calculate Limiting Potential U_L (V) and Overpotential eta (V)
     u_limiting = -abs(delta_g_base)
     overpotential = abs(delta_g_base)
 
-    # Write to sheet 5-gibbs: C2 = Delta G_H*, D2 = U_L
     ws5.cell(row=1, column=4, value="u_l")
     ws5.cell(row=2, column=1, value=surface_name)
     ws5.cell(row=2, column=2, value="H")
@@ -176,14 +160,10 @@ def calculate_gibbs_and_visualize(
     wb.save(out_buf)
     files[excel_path] = out_buf.getvalue()
 
-    # 1. Render Graph 1: Gibbs Free Energy Profile (Reaction Coordinate)
     delta_g_shifted = round(delta_g_base - u_pot + 0.0592 * ph, 4)
     gibbs_img_bytes = render_gibbs_reaction_profile(surface_name, delta_g_shifted, u_pot, ph)
-
-    # 2. Render Graph 2: The Limiting Potential (U_L) Graph (x: *H Adsorption Energy delta_e, y: U_L)
     ul_img_bytes = render_ul_graph(surface_name, delta_e, delta_g_base)
 
-    # Save both as separate image files in 5-data-visual/
     root_match = re.match(r"^([^/]+)/", excel_path)
     root = f"{root_match.group(1)}/" if root_match else ""
     files[f"{root}5-data-visual/her_free_energy_diagram.png"] = gibbs_img_bytes

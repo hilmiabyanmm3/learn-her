@@ -9,7 +9,7 @@ from components.ui_components import (
 )
 from utils.module_4_utils import calculate_gibbs_and_visualize
 
-st.set_page_config(page_title="Module 4: Delta Gibbs & Visualization | HER", layout="wide")
+st.set_page_config(page_title="Module 4: Delta Gibbs & Visualization | HER", page_icon="https://img.icons8.com/?size=100&id=vtLGHdmfoSt8&format=png&color=000000", layout="wide")
 inject_global_css()
 style_sidebar()
 render_sidebar_progress(80)

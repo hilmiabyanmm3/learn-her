@@ -2,10 +2,20 @@ import io
 import os
 import re
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 import numpy as np
 import openpyxl
 from utils.common import extract_zip_to_dict, build_zip_from_dict, RY_TO_EV
+
+HER_BLUE_PALETTE = [
+    "#007BFF",  # Reference Electric Blue (Primary)
+    "#0284c7",  # Sky Blue
+    "#0d9488",  # Deep Teal
+    "#2563eb",  # Royal Blue
+    "#6366f1",  # Indigo
+    "#0891b2",  # Cyan
+    "#1e40af",  # Deep Navy
+    "#4338ca",  # Midnight Blue
+]
 
 def extract_thermochem_robust(wb: openpyxl.Workbook) -> tuple[float, float]:
     """
@@ -28,7 +38,6 @@ def extract_thermochem_robust(wb: openpyxl.Workbook) -> tuple[float, float]:
     if delta_e is not None and delta_g is not None:
         return delta_e, delta_g
 
-    # Dynamic fallback evaluation from raw electronic energies in sheets 1, 2, 4
     try:
         ws1 = wb["1-adsorbate"]
         ws2 = wb["2-isolated-mol"]
@@ -100,7 +109,6 @@ def render_comparative_gibbs_graph(surfaces_data: list[dict], u_pot: float = 0.0
     x_mid = [0.5, 1.5, 2.5]
     width = 0.36
     bar_thickness = 2.4
-    num_surfaces = len(surfaces_data)
 
     # Reference levels at 0.0 eV
     ax.hlines(0.0, x_mid[0] - width/2, x_mid[0] + width/2, colors="#1e293b", linewidth=bar_thickness)
@@ -112,7 +120,8 @@ def render_comparative_gibbs_graph(surfaces_data: list[dict], u_pot: float = 0.0
     h_x_start = x_mid[1] - width/2
     h_x_end = x_mid[1] + width/2
 
-    colors = cm.tab10(np.linspace(0, 1, max(num_surfaces, 3)))
+    colors = [HER_BLUE_PALETTE[i % len(HER_BLUE_PALETTE)] for i in range(len(surfaces_data))]
+
     for idx, (s, c) in enumerate(zip(surfaces_data, colors)):
         dg = s["delta_g_shifted"]
         ax.hlines(dg, h_x_start, h_x_end, colors=c, linewidth=2.2, label=f"{s['surface']} (ΔG = {dg:+.2f} eV)")
@@ -143,7 +152,6 @@ def render_comparative_ul_graph(surfaces_data: list[dict]) -> bytes:
     """
     fig, ax = plt.subplots(figsize=(8.2, 5.0), dpi=300)
 
-    # Average thermal correction: Delta ZPE - T Delta S ~ 0.24 eV
     corr = 0.24
     if surfaces_data:
         corrs = [s["delta_g"] - s["delta_e"] for s in surfaces_data if s.get("delta_e") is not None]
@@ -152,35 +160,30 @@ def render_comparative_ul_graph(surfaces_data: list[dict]) -> bytes:
 
     de_peak = -corr
 
-    # Theoretical volcano lines vs *H adsorption energy:
     de_min = min([s["delta_e"] for s in surfaces_data] + [-0.9]) - 0.15
     de_max = max([s["delta_e"] for s in surfaces_data] + [0.5]) + 0.15
 
     de_neg = np.linspace(de_min, de_peak, 100)
     de_pos = np.linspace(de_peak, de_max, 100)
 
-    ul_neg = de_neg + corr
-    ul_pos = -(de_pos + corr)
+    # Cohesive theme: Slate-Gray for Heyrovsky branch, Electric Blue for Volmer branch
+    ax.plot(de_neg, de_neg + corr, color="#475569", linewidth=2.2,
+            label=rf"Heyrovsky / Tafel Limiting ($\Delta E < {de_peak:.2f}$ eV)")
+    ax.plot(de_pos, -(de_pos + corr), color="#007BFF", linewidth=2.2,
+            label=rf"Volmer Limiting ($\Delta E > {de_peak:.2f}$ eV)")
 
-    ax.plot(de_neg, ul_neg, color="#dc2626", linewidth=2.2,
-            label=rf"Heyrovsky / Tafel Limiting ($\Delta E_{{\mathrm{{H}}^*}} < {de_peak:.2f}$ eV)")
-    ax.plot(de_pos, ul_pos, color="#2563eb", linewidth=2.2,
-            label=rf"Volmer Limiting ($\Delta E_{{\mathrm{{H}}^*}} > {de_peak:.2f}$ eV)")
-
-    # Volcano apex (Ideal Catalyst at U_L = 0 V)
+    # Volcano apex (0 V)
     ax.scatter([de_peak], [0.0], color="#16a34a", s=130, marker="*", zorder=4,
                label=f"Ideal Volcano Apex ({de_peak:.2f} eV, 0.0 V)")
 
-    num_s = len(surfaces_data)
-    colors = cm.tab10(np.linspace(0, 1, max(num_s, 3)))
+    colors = [HER_BLUE_PALETTE[i % len(HER_BLUE_PALETTE)] for i in range(len(surfaces_data))]
 
     for idx, (s, c) in enumerate(zip(surfaces_data, colors)):
         de = s["delta_e"]
         ul = s["u_l"]
-        ax.scatter([de], [ul], color=c, s=120, zorder=6, edgecolors="black", linewidths=1.2,
+        ax.scatter([de], [ul], color=c, s=120, zorder=6, edgecolors="#1e293b", linewidths=1.2,
                    label=f"{s['surface']} ($\Delta E={de:+.2f}$ eV, $U_L={ul:+.2f}$ V)")
         ax.text(de, ul + 0.035, s["surface"], ha="center", va="bottom", fontsize=8.5, fontweight="bold", color=c)
-        # Drop lines to axes
         ax.plot([de, de], [-1.5, ul], ":", color=c, alpha=0.4)
 
     ax.set_xlabel(r"*H Adsorption Energy $\Delta E_{\mathrm{H}^*}$ (eV)", fontsize=11, fontweight="bold")
@@ -202,14 +205,6 @@ def render_comparative_ul_graph(surfaces_data: list[dict]) -> bytes:
 def generate_multi_surface_comparison(
     zip_bytes: bytes, u_pot: float = 0.0, ph: float = 0.0
 ) -> tuple[bytes | None, bytes | None, bytes | None, list[dict], str | None]:
-    """
-    Renders two SEPARATE multi-surface comparison graphs:
-      1. gibbs_img_bytes: Comparative Reaction Coordinate Profile.
-      2. ul_img_bytes: Comparative Limiting Potential (U_L) Graph (y: U_L, x: *H Adsorption Energy).
-    Saves both as separate PNG files in `5-data-visual/`:
-      - `5-data-visual/her_free_energy_comparison.png`
-      - `5-data-visual/her_ul_volcano_comparison.png`
-    """
     files = extract_zip_to_dict(zip_bytes)
     surfaces_data = parse_all_gibbs_from_zip(files)
 
@@ -222,13 +217,9 @@ def generate_multi_surface_comparison(
     for s in surfaces_data:
         s["delta_g_shifted"] = round(s["delta_g"] - u_pot + 0.0592 * ph, 4)
 
-    # 1. Comparative Gibbs Free Energy Graph
     gibbs_img_bytes = render_comparative_gibbs_graph(surfaces_data, u_pot, ph)
-
-    # 2. Comparative Limiting Potential (U_L) Graph (x-axis: *H Adsorption Energy)
     ul_img_bytes = render_comparative_ul_graph(surfaces_data)
 
-    # Save both into 5-data-visual/ across all surface folders
     for s in surfaces_data:
         root_match = re.match(r"^([^/]+)/", s["path"])
         root = f"{root_match.group(1)}/" if root_match else ""

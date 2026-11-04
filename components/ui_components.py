@@ -1,14 +1,15 @@
 import streamlit as st
 
 def inject_global_css():
-    """Injects modern typography, button styles, custom cards, and Font Awesome."""
+    """Injects modern typography, button styles matching reference.zip, and Font Awesome icons."""
     st.markdown("""
         <style>
+            /* Import Inter Font & Font Awesome */
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
             @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css');
 
             html, body, [class*="css"] {
-                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                font-family: 'Inter', sans-serif;
             }
 
             code, pre, .stCodeBlock {
@@ -16,142 +17,124 @@ def inject_global_css():
             }
 
             .stApp {
-                background-color: #f8fafc;
+                background-color: #fcfcfc;
             }
 
-            /* Buttons */
-            .stButton > button {
-                border-radius: 8px;
-                font-weight: 600;
-                padding: 0.55rem 1.25rem;
-                transition: all 0.2s ease;
-                border: 1px solid #2563eb;
+            /* --- Reference-Grade Button Styles (#007BFF) --- */
+            .stButton > button, 
+            .stDownloadButton > button,
+            button[kind="primary"],
+            button[kind="secondary"] {
+                border-radius: 8px !important;
+                border: 1px solid #007BFF !important;
+                background-color: #ffffff !important;
+                color: #007BFF !important;
+                font-weight: 600 !important;
+                padding: 0.5rem 1.25rem !important;
+                transition: all 0.3s ease !important;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
             }
-            .stButton > button:hover {
+
+            /* Primary submit buttons: solid blue by default */
+            .stButton > button[kind="primary"],
+            button[data-testid="baseButton-primary"] {
+                background: linear-gradient(135deg, #007BFF 0%, #0056b3 100%) !important;
+                color: #ffffff !important;
+                border: 1px solid #0056b3 !important;
+                box-shadow: 0 2px 6px rgba(0, 123, 255, 0.25) !important;
+            }
+
+            /* Hover states matching reference.zip */
+            .stButton > button:hover, 
+            .stDownloadButton > button:hover,
+            button[kind="secondary"]:hover {
+                background-color: #007BFF !important;
+                color: #ffffff !important;
+                border: 1px solid #007BFF !important;
+                box-shadow: 0 4px 12px rgba(0, 123, 255, 0.25) !important;
                 transform: translateY(-1px);
-                box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
             }
 
-            /* Custom metric card */
-            .custom-card {
-                background: white;
-                border-radius: 12px;
-                padding: 1.5rem;
-                border: 1px solid #e2e8f0;
-                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-                margin-bottom: 1.2rem;
-            }
-            
-            .custom-card-title {
-                font-size: 0.875rem;
-                font-weight: 600;
-                color: #64748b;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                margin-bottom: 0.5rem;
-            }
-            
-            .custom-card-value {
-                font-size: 1.75rem;
-                font-weight: 700;
-                color: #0f172a;
+            .stButton > button[kind="primary"]:hover {
+                background: linear-gradient(135deg, #0069d9 0%, #004494 100%) !important;
+                box-shadow: 0 6px 16px rgba(0, 123, 255, 0.35) !important;
+                transform: translateY(-1px);
             }
 
-            /* Info Box */
-            .info-callout {
-                background: #eff6ff;
-                border-left: 4px solid #3b82f6;
-                padding: 1rem 1.25rem;
-                border-radius: 0 8px 8px 0;
-                color: #1e3a8a;
-                margin: 1rem 0;
+            /* Sidebar styling */
+            [data-testid="stSidebar"] {
+                background-color: #ffffff;
+                border-right: 1px solid #f0f2f6;
+            }
+            [data-testid="stSidebarNavItems"] li [aria-current="page"] {
+                background-color: #eef6ff !important;
+                color: #007BFF !important;
+                font-weight: 700 !important;
+                border-left: 4px solid #007BFF;
+                border-radius: 4px 6px 6px 4px;
+            }
+            .stProgress > div > div > div > div {
+                background-image: linear-gradient(to right, #007BFF, #00c6ff);
+                border-radius: 10px;
+                height: 6px;
             }
         </style>
     """, unsafe_allow_html=True)
 
 def module_header(number: str, title: str, subtitle: str):
-    """Renders a standard clean module header with numbered badge."""
+    """Refined header with gradient badge matching reference.zip."""
     st.markdown(f"""
-        <div style="margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
-            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 8px;">
-                <span style="
-                    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-                    color: white;
-                    padding: 4px 12px;
-                    border-radius: 6px;
-                    font-size: 0.85rem;
-                    font-weight: 700;
-                    letter-spacing: 0.05em;">
+        <div style="margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #f0f2f6;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <span style="background: linear-gradient(135deg, #007BFF 0%, #0056b3 100%);
+                             color: white; padding: 6px 16px; border-radius: 8px;
+                             font-size: 0.85rem; font-weight: 800; letter-spacing: 0.5px;">
                     MODULE {number}
                 </span>
-                <h1 style="margin: 0; font-size: 1.9rem; font-weight: 800; color: #0f172a;">
+                <h1 style="margin: 0; font-size: 2.0rem; font-weight: 800; color: #1a1c1e;">
                     {title}
                 </h1>
             </div>
-            <p style="margin: 0; color: #64748b; font-size: 1.05rem;">
+            <p style="margin: 0; color: #6c757d; font-size: 1.05rem;">
                 {subtitle}
             </p>
         </div>
     """, unsafe_allow_html=True)
 
-def sub_section_header(title: str, icon: str = "fa-solid fa-layer-group"):
-    """Sub-section title with Font Awesome icon."""
+def sub_section_header(title: str, icon: str = "fa-solid fa-circle-chevron-right"):
+    """Sub-section title with reference blue accent icon."""
     st.markdown(f"""
         <div style="margin-top: 25px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-            <i class="{icon}" style="color: #2563eb; font-size: 1.15rem;"></i>
-            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #1e293b;">
+            <i class="{icon}" style="color: #007BFF; font-size: 1.15rem;"></i>
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #1a1c1e;">
                 {title}
             </h3>
         </div>
     """, unsafe_allow_html=True)
 
 def highlight_box(text: str, box_type: str = "info"):
-    """Styled banner/callout for guidelines and key notices."""
-    colors = {
-        "info": ("#eff6ff", "#3b82f6", "#1e40af"),
-        "success": ("#f0fdf4", "#22c55e", "#166534"),
-        "warning": ("#fffbeb", "#f59e0b", "#92400e"),
-        "danger": ("#fef2f2", "#ef4444", "#991b1b")
-    }
-    bg, border, text_c = colors.get(box_type, colors["info"])
+    """Clean card-style callout box with blue border matching reference."""
     st.markdown(f"""
         <div style="
-            background-color: {bg};
-            border-left: 4px solid {border};
-            padding: 12px 18px;
-            border-radius: 0 8px 8px 0;
-            color: {text_c};
+            background-color: #ffffff;
+            border-left: 5px solid #007BFF;
+            padding: 16px 20px;
+            border-radius: 0 10px 10px 0;
+            color: #3e444b;
             font-size: 0.95rem;
-            margin: 12px 0 20px 0;
-            line-height: 1.5;">
+            margin: 15px 0 20px 0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+            line-height: 1.6;">
             {text}
         </div>
     """, unsafe_allow_html=True)
 
 def style_sidebar():
-    """Styles the Streamlit sidebar."""
-    st.markdown("""
-        <style>
-            section[data-testid="stSidebar"] {
-                background-color: #0f172a;
-            }
-            section[data-testid="stSidebar"] .stMarkdown, 
-            section[data-testid="stSidebar"] p, 
-            section[data-testid="stSidebar"] span {
-                color: #cbd5e1 !important;
-            }
-            section[data-testid="stSidebar"] h1, 
-            section[data-testid="stSidebar"] h2, 
-            section[data-testid="stSidebar"] h3 {
-                color: #ffffff !important;
-            }
-        </style>
-    """, unsafe_allow_html=True)
+    pass
 
 def render_sidebar_progress(progress_val: int):
-    """Renders progress in sidebar."""
     with st.sidebar:
-        st.markdown("### Workflow Progress")
+        st.markdown("<h2 style='font-size: 1.1rem; margin-top: 0; color: #1a1c1e;'>Workflow Journey</h2>", unsafe_allow_html=True)
         st.progress(progress_val / 100.0)
-        st.caption(f"Pipeline Completion: {progress_val}%")
+        st.caption(f"Pipeline Completion: **{progress_val}%**")
         st.markdown("---")
