@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "========================================================"
-echo " Launching HER Interactive Streamlit Application..."
+echo " Launching Catalysis Simulation & Learning Platform..."
 echo "========================================================"
 
 if [ ! -d ".venv" ]; then

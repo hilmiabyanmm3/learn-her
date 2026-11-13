@@ -1,1 +1,1 @@
-# UI Components package
+# UI components package

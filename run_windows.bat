@@ -1,14 +1,14 @@
 @echo off
 echo ========================================================
-echo  Launching HER Interactive Streamlit Application...
+echo  Launching Catalysis Simulation & Learning Platform...
 echo ========================================================
 
 IF NOT EXIST ".venv" (
-    echo Creating virtual environment...
+    echo Creating Python virtual environment...
     python -m venv .venv
 )
 
-call .venv\Scripts\activate
+call .venv\Scripts\activate.bat
 echo Installing / updating dependencies...
 pip install -r requirements.txt
 
