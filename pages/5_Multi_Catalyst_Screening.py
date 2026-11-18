@@ -65,6 +65,7 @@ if zip_file:
             reaction = get_reaction(detected_rxn)
 
             surfaces_data = []
+            validation_errors = []
             for path, data in files.items():
                 if path.endswith('.xlsx') and not os.path.basename(path).startswith('~$'):
                     try:
@@ -87,8 +88,13 @@ if zip_file:
 
                         thermo["path"] = path
                         surfaces_data.append(thermo)
+                    except ValueError as err:
+                        validation_errors.append(f"**{os.path.basename(path)}**: {err}")
                     except Exception:
                         continue
+
+            for verr in validation_errors:
+                st.error(f"❌ Incomplete Data in {verr}")
 
             if len(surfaces_data) < 2:
                 st.error("Please upload an archive containing at least two completed catalyst folders/spreadsheets.")

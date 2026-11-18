@@ -1,10 +1,10 @@
 @echo off
 echo ========================================================
-echo  Launching Catalysis Simulation & Learning Platform...
+echo  Launching Catalysis Simulation ^& Learning Platform...
 echo ========================================================
 
-IF NOT EXIST ".venv" (
-    echo Creating Python virtual environment...
+if not exist ".venv" (
+    echo Creating virtual environment...
     python -m venv .venv
 )
 
@@ -14,4 +14,4 @@ pip install -r requirements.txt
 
 echo Starting Streamlit application...
 streamlit run Main_Menu.py
-pause
+if errorlevel 1 pause

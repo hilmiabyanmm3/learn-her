@@ -85,7 +85,11 @@ if zip_file and run_clicked:
             rxn_name = detect_reaction_type(files, wb)
             reaction = get_reaction(rxn_name)
 
-            raw_data = extract_thermochem_robust(wb, reaction.name)
+            try:
+                raw_data = extract_thermochem_robust(wb, reaction.name)
+            except ValueError as err:
+                st.error(f"❌ Incomplete Data: {err}")
+                st.stop()
             thermo = reaction.calculate_thermodynamics(raw_data, u_val, ph_val)
 
             # Update workbook sheet 5

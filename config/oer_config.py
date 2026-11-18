@@ -28,6 +28,15 @@ class OERConfig(BaseReaction):
                 for r in range(2, ws.max_row + 1):
                     ws.cell(row=r, column=1, value=surface_name)
 
+        if "2-isolated-mol" in wb.sheetnames:
+            ws2 = wb["2-isolated-mol"]
+            for r, zpe_v, ts_v in [(2, 0.56, 0.67), (3, 0.272, 0.404), (4, 0.1, 0.64)]:
+                ws2.cell(row=r, column=2).value = None
+                ws2.cell(row=r, column=3).value = f"=B{r}*13.605698066"
+                ws2.cell(row=r, column=4).value = zpe_v
+                ws2.cell(row=r, column=5).value = ts_v
+                ws2.cell(row=r, column=6).value = f"=D{r}-E{r}"
+
         if "4-vibrasi" in wb.sheetnames:
             ws4 = wb["4-vibrasi"]
             ws4.delete_rows(1, ws4.max_row + 1)

@@ -26,8 +26,8 @@ class HERConfig(BaseReaction):
         if "2-isolated-mol" in wb.sheetnames:
             ws2 = wb["2-isolated-mol"]
             if ws2.max_row < 2:
-                ws2.append(["H2", -31.7452, 0.2720, 0.4040])
-                ws2.append(["H2O", -467.2185, 0.5600, 0.6700])
+                ws2.append(["H2", None, 0.2720, 0.4040])
+                ws2.append(["H2O", None, 0.5600, 0.6700])
                 
         if "3-ads-energy" in wb.sheetnames:
             wb["3-ads-energy"].cell(row=2, column=1, value=surface_name)

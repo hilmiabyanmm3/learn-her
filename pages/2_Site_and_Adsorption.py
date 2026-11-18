@@ -19,7 +19,7 @@ from components.ui_components import (
 )
 from config import get_reaction
 from core.qe_parser import parse_qe_total_energy, parse_qe_atomic_positions, filter_topmost_active_sites
-from core.cell_builder import build_adsorbate_system, build_all_adsorbate_systems
+from core.cell_builder import build_adsorbate_system, build_all_adsorbate_systems, DEFAULT_HEIGHTS
 from core.excel_manager import extract_zip_to_dict, build_zip_from_dict, find_excel_file, detect_reaction_type
 
 st.set_page_config(
@@ -90,10 +90,27 @@ if uploaded_zip:
                 mode = "Single Intermediate Only"
 
             if "All" in mode:
-                st.info(f"💡 **Default Batch Mode Active:** This will construct `PW.in` files for all {len(reaction.intermediates)} intermediates (`{inter_list_str}`) on the chosen site with calibrated geometry in a single step.")
+                st.markdown("**Surface–Adsorbate Bond Length (Å) per Intermediate:**")
+                heights_map = {}
+                h_cols = st.columns(len(reaction.intermediates))
+                for col_ui, inter in zip(h_cols, reaction.intermediates):
+                    inter_clean = inter.replace("*", "").strip().upper()
+                    default_len = DEFAULT_HEIGHTS.get(inter_clean, 1.4)
+                    with col_ui:
+                        heights_map[inter_clean] = st.number_input(
+                            f"{inter_clean}* Length (Å)",
+                            min_value=0.50,
+                            max_value=4.00,
+                            value=float(default_len),
+                            step=0.05,
+                            format="%.2f",
+                            key=f"batch_len_{inter_clean}"
+                        )
+
+                st.info(f"💡 **Batch Mode Active:** Constructs `PW.in` files for all {len(reaction.intermediates)} intermediates (`{inter_list_str}`) on Atom #{chosen_idx} using your specified surface–adsorbate lengths.")
                 btn_label = f"Generate All {reaction.name} Adsorbate Structures →"
                 if st.button(btn_label, type="primary"):
-                    updated_files = build_all_adsorbate_systems(files, chosen_idx, reaction.intermediates)
+                    updated_files = build_all_adsorbate_systems(files, chosen_idx, reaction.intermediates, heights_map=heights_map)
                     
                     # Update clean surface energy in Excel (supports both OER and HER templates)
                     excel_info = find_excel_file(updated_files)
@@ -120,6 +137,16 @@ if uploaded_zip:
 
                     updated_zip = build_zip_from_dict(updated_files)
                     st.success(f"All {len(reaction.intermediates)} intermediate structures successfully generated into `3-adsorption/`!")
+                    summary_rows = [
+                        {
+                            "Intermediate": f"{inter.replace('*', '').strip()}*",
+                            "Anchor Site": f"Atom #{chosen_idx}",
+                            "Surface–Adsorbate Length (Å)": f"{heights_map[inter.replace('*', '').strip().upper()]:.2f}",
+                            "Generated Input": f"3-adsorption/{inter.replace('*', '').strip()}/PW.in"
+                        }
+                        for inter in reaction.intermediates
+                    ]
+                    st.dataframe(pd.DataFrame(summary_rows), use_container_width=True)
                     st.download_button(
                         label="⬇️ Download Updated Project ZIP (All Adsorbates Added)",
                         data=updated_zip,
@@ -131,8 +158,15 @@ if uploaded_zip:
                 with col_inter:
                     chosen_intermediate = st.selectbox("Select Adsorbate to Bind:", reaction.intermediates, index=0)
                 with col_h:
-                    default_h = 1.0 if chosen_intermediate == "H" else (1.2 if chosen_intermediate == "O" else 1.4)
-                    h_dist = st.slider("Adsorption Distance (Å above selected site):", min_value=0.8, max_value=2.4, value=default_h, step=0.05)
+                    default_h = DEFAULT_HEIGHTS.get(chosen_intermediate.replace("*", "").strip().upper(), 1.4)
+                    h_dist = st.number_input(
+                        "Surface–Adsorbate Length (Å above selected site):",
+                        min_value=0.50,
+                        max_value=4.00,
+                        value=float(default_h),
+                        step=0.05,
+                        format="%.2f"
+                    )
 
                 btn_label = f"Generate {chosen_intermediate} Adsorbate Structure (3-adsorption/{chosen_intermediate}/PW.in) →"
                 if st.button(btn_label, type="primary"):
@@ -161,7 +195,7 @@ if uploaded_zip:
                         updated_files[excel_path] = out_buf.getvalue()
                     
                     updated_zip = build_zip_from_dict(updated_files)
-                    st.success(f"{chosen_intermediate} structure successfully generated into `3-adsorption/{chosen_intermediate}/PW.in`!")
+                    st.success(f"{chosen_intermediate} structure (length = {h_dist:.2f} Å) successfully generated into `3-adsorption/{chosen_intermediate}/PW.in`!")
                     st.download_button(
                         label=f"⬇️ Download Updated Project ZIP ({chosen_intermediate} Added)",
                         data=updated_zip,
